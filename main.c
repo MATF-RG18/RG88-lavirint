@@ -1,22 +1,29 @@
+#include<stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
 #include<math.h>
 #define TIMER_INTERVAL 40
 #define TIMER_ID 0
-
+#include "image.h"
+#define FILENAME0 "wall.bmp"
+static GLuint names[1];
 static int window_width, window_height;
+static float matrix[16]; //matrica za teksture
 
 float posX=1;
 float posY=1;
 float posZ=1;
 float wall1Z=0.3;
+float wall2Z;
+float wall3Z;
 int wall_direction=-1;
 float x=0;
 float t=0;
 float z=0;
+float xpos=0, ypos=0,  zpos=0, cRadius=1,xrot=0, yrot=0,angle=0;
 const static float pi = 3.141592653589793;
-
-
+float lastx, lasty;
+float kx=0,ky=0.1,kz=1,lx=0,lz=0,r=1;
 static void draw_wall(float t,float x,float z);
 static void draw_labyrinth();
 static void on_keyboard(unsigned char key, int x, int y);
@@ -25,6 +32,114 @@ static void on_display(void);
 static void draw_ball();
 static void on_timer(int value);
 
+static int check_function();
+static void nadji_w();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje loptice udesno
+static void nadji_s();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica ulevo
+static void nadji_a();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nagore
+static void nadji_d();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nadole
+static void povecaj_x();//fja povecava x koordinatu loptice
+static void povecaj_y();//fja povecava y koordinatu loptice
+static void povecaj_z();//fja povecava z koordinatu loptice
+static void smanji_x();//fja smanjuje x koordinatu loptice
+static void smanji_y();//fja smanjuje y koordinatu loptice
+static void smanji_z();//fja smanjuje z koordinatu loptice
+
+ void processSpecialKeys(int key, int xx, int yy) {
+        
+            switch (key) {
+                    case GLUT_KEY_LEFT :
+                            //pomeramo poziciju kamere
+                            angle -= 0.05f;
+                            if(angle<=-360)
+                                angle+=360;
+                            lx = sin(angle);
+                            lz =-cos(angle);
+                        
+                            break;
+                    case GLUT_KEY_RIGHT :
+                     
+                            //pomeramo poziciju kamere
+                            angle += 0.05f;
+                            if(angle>=360)
+                                angle-=360;
+                                lx = sin(angle);
+                                lz =-cos(angle);
+                        
+                        break;
+                    case GLUT_KEY_UP :
+                            r -= 0.5;
+                       
+                          
+                            break;
+                    case GLUT_KEY_DOWN :
+                        
+                            //zumiramo
+                            if(r+0.5>60)
+                                r=60;
+                            r += 0.5;
+                            
+                        break;
+            }
+        
+            
+	glutPostRedisplay();
+}
+void camera (void) {
+    glRotatef(xrot,1.0,0.0,0.0);  
+    glRotatef(yrot,0.0,1.0,0.0);  
+    glTranslated(-xpos,-ypos,-zpos);
+    glutPostRedisplay();
+}
+static void initialize(void)
+{
+    /* Objekat koji predstavlja teskturu ucitanu iz fajla. */
+    Image * image;
+
+    /* Ukljucuje se testiranje z-koordinate piksela. */
+    glEnable(GL_DEPTH_TEST);
+
+    /* Ukljucuju se teksture. */
+    glEnable(GL_TEXTURE_2D);
+
+    glTexEnvf(GL_TEXTURE_ENV,
+              GL_TEXTURE_ENV_MODE,
+              GL_REPLACE);
+
+    /*
+     * Inicijalizuje se objekat koji ce sadrzati teksture ucitane iz
+     * fajla.
+     */
+    image = image_init(0, 0);
+
+    /* Kreira se prva tekstura. */
+    image_read(image, FILENAME0);
+
+    /* Generisu se identifikatori tekstura. */
+    glGenTextures(1, names);
+
+    glBindTexture(GL_TEXTURE_2D, names[0]);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,
+                    GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                 image->width, image->height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, image->pixels);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    /* Unistava se objekat za citanje tekstura iz fajla. */
+    image_done(image);
+
+    /* Inicijalizujemo matricu rotacije. */
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glGetFloatv(GL_MODELVIEW_MATRIX, matrix);
+}
 
 
 int main(int argc, char **argv)
@@ -38,22 +153,120 @@ int main(int argc, char **argv)
     glutInitWindowPosition(100, 100);
     glutCreateWindow("Lavirint");
 
-
+    
+    glutSpecialFunc(processSpecialKeys);
+    glEnable(GL_NORMALIZE);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     glutKeyboardFunc(on_keyboard);
     glutReshapeFunc(on_reshape);
     glutDisplayFunc(on_display);
 
     glClearColor(0.68,0.98,0.68,0);
-    glEnable(GL_DEPTH_TEST);
+     initialize();
+    
     glLineWidth(2);
-   
-
     glutMainLoop();
 
     return 0;
 }
 
 
+//Funkcija koja proverava da li ce kuglica udariti u zid
+static int check_function(){
+
+printf("%f ",kx);
+printf("%f\n",kz);
+
+
+//if((kx >= 0.26 && kx<=0.44)  && (kz >0.26 && kz<1.76))
+//return 0;
+
+//if(kx==0.34 && kz>0.18)
+//return 0;
+//ulaz:
+if((kx>=-0.08 && kx<=-0.02) && (kz<=1.04 && kz>=0.56))
+return 1;
+//prvi deo
+if((kx>=-0.02 && kx<=0.25) && (kz>=0.16 && kz<=1.93))
+return 1;
+//pokretni deo prvog dela
+if((kx>=0.21 && kx<=0.42) && (kz>=1.79 && kz<=1.93)){
+if(wall3Z+1.5<=kz){
+return 1;
+}
+}
+//ulaz za drugi deo
+if((kx>=0.25 && kx<=0.45) && (kz>=0.14 && kz<=0.20))
+return 1;
+//drugi deo
+if((kx>=0.42 && kx<=0.56) && (kz>=0.16 && kz<=1.93))
+return 1;
+//pokretni deo drugog dela
+if((kx>=0.65 && kx<=0.71) && (kz>=1.41 && kz<=1.93)){
+if(wall2Z+1.4<=kz){
+return 1;
+ }
+}
+//ulaz za treci deo
+if((kx>=0.56 && kx<=0.72) && (kz>=0.55 && kz<=0.60))
+return 1;
+//treci deo I
+//if((kx>=0.45 && kx<=0.56) && (kz>=0.64 && kz<=1.35))
+//return 1;
+//treci deo II
+
+if((kx>=0.70 && kx<=0.84) && (kz>=0.16 && kz<=1.93))
+return 1;
+//ulaz za 4.deo
+if((kx>=0.82 && kx<=1.04) && (kz>=0.40 && kz<=0.56))
+return 1;
+//4.deo:
+
+if((kx>=1.04 && kx<=1.15) && (kz>=0.16 && kz<=1.93)){
+return 1;
+}
+//cetvrti deo zidovi koji se krecu
+if((kx>=1.15 && kx<=1.28) && (kz>=0.16 && kz<=1.93)){
+if(kz>=1.93-wall1Z+1.4 || kz<=-wall1Z+1){
+return 1;
+ }
+}
+
+//peti deo
+if((kx>=1.28 && kx<=1.36) &&(kz>=0.16 && kz<=1.93)){
+return 1;
+}
+//peti deo zidovi koji se krecu
+if((kx>=1.36 && kx<=1.52) && (kz>0.16 && kz<1.93)){
+if(kz!=wall1Z+1){
+return 1;
+}
+
+}
+
+//sesti deo
+if((kx>=1.52 && kx<=1.64) && (kz>0.16 && kz<1.93)){
+return 1;
+}
+//ulaz sa sedmi deo
+if((kx>=1.64 && kx<=1.78) && (kz>0.16 && kz<0.37)){
+return 1;
+}
+//sedmi deo i kraj
+if((kx>=1.78 && kx <=1.94) && (kz>0.16 && kz<1.93)){
+return 1;
+}
+//kraj
+if((kx>=1.94 && kx<=2.06) && (kz>0.52 && kz<1.05))
+return 1;
+
+
+
+
+return 0;
+}
 
 static void on_timer(int value){
 
@@ -62,10 +275,10 @@ static void on_timer(int value){
 
 
 	if(wall_direction==1){
-	wall1Z+=0.0001;
+	wall1Z+=0.0001/20;
 	}
 	else
-	wall1Z-=0.0001;
+	wall1Z-=0.0001/20;
 
 	if(wall1Z<-0.3 || wall1Z>0.3){
 	wall_direction=-wall_direction;
@@ -77,45 +290,45 @@ static void on_timer(int value){
 }
 
 
-static void on_keyboard(unsigned char key, int x, int y){
+static void on_keyboard(unsigned char tast, int x, int y){
 //Podesavamo da se kuglica krece na w,a,s,d,r i f 
-	
-	switch(key){
-	case 27:
-		exit(0);
-	break;
-
-	case 's':
-	case 'S':
-		posX-=0.1;
+        /*kuglica se krece gore*/
 
 
-	break;
-	
-	case 'w':
-	case 'W':
-
-		posX+=0.1;
-
-	
-	break;
-	case 'd':
-	case 'D':
-		posZ+=0.1;
-		//lx+=0.1f;
-	 
-	break;
-	case 'A':
-	case 'a':
-	
-	posZ-=0.1;
-
+        if(tast==27)
+            exit(0);
+    if(tast=='w' || tast=='W')
+            nadji_a();
+    /*Kuglica se krece dole*/
+    if(tast=='s' || tast=='S'){
     
-	break;
-
-}
-
-
+           nadji_d();
+        
+    }
+    /*Kuglica se krece ulevo*/
+    if(tast=='a' || tast=='A'){
+        
+            nadji_s();
+        
+        
+    }
+    /*Kuglica se krece udesno*/
+    if(tast=='d' || tast=='D'){
+        
+           // nadji_d();
+            nadji_w();
+      
+        
+    }
+    /*samo opcija 2 ima ove tastere i kuglica se krece vertikalno nagore*/
+    if((tast=='q' || tast=='Q')){
+        povecaj_y();
+    }
+    /*samo opcija 2 ima ove tastere i kuglica se krece vertikalno nadole*/
+    if((tast=='e' || tast=='E') ){
+        smanji_y();
+    }
+    
 	glutPostRedisplay();
 }
 static void on_reshape(int width, int height)
@@ -123,6 +336,18 @@ static void on_reshape(int width, int height)
 
     window_width = width;
     window_height = height;
+
+	if(height == 0)
+		height = 1;
+	float ratio = 1.0* width / height;
+	glMatrixMode(GL_PROJECTION);
+
+	glLoadIdentity();
+
+	glViewport(0, 0, width, height);
+	gluPerspective(45,ratio,1,1000);
+	glMatrixMode(GL_MODELVIEW);
+    glutPostRedisplay();
 }
 
 static void on_display(void)
@@ -130,27 +355,17 @@ static void on_display(void)
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-    glViewport(0, 0, window_width, window_height);
-
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-
-    gluPerspective(
-           30,
-            window_width/(float)window_height,
-            1, 25);
-
-    glMatrixMode(GL_MODELVIEW);
+    glMultMatrixf(matrix);
 
 
     
-    glLoadIdentity();
-          // gluLookAt(posX + (cos(90)*2), posY + (2*sin(90)), posZ, posX, posY, posZ, 0, 1, 0);
-
-    gluLookAt(6,6,6,0,0,0,0,1,0);
+    glLoadIdentity(); 
+    gluLookAt(-1+r*lx,2,1+r*lz,
+                  kx,ky,kz,
+                  0,1,0
+    );
+    
+   // gluLookAt(6,6,6,0,0,0,0,1,0);
 
     glPushMatrix();
     glColor3f(0, 0, 1);
@@ -179,7 +394,7 @@ static void on_display(void)
 	glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
 	//Crtamo zidove lavirinta i namestamo boju
 	GLfloat light_position[]={2,0,-1,1}; 
-	GLfloat ambient_coeffs_l[]={0.3,0.3,1,0};
+	GLfloat ambient_coeffs_l[]={0.0,0.3,1,0};
         GLfloat diffuse_coeffs_l[]={0.3,0.3,1,0};
         GLfloat specular_coeffs_l[]={0.8,0.8,0.3,0};
         GLfloat shininess_l=30;
@@ -187,10 +402,86 @@ static void on_display(void)
 	
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
-
+        glPushMatrix();
+        glTranslatef(1,0,1.05);
+        glDisable(GL_CULL_FACE);
+        glEnable(GL_TEXTURE_2D);
+        
+        glBindTexture(GL_TEXTURE_2D, names[0]);
+        glColor3f(0.5, 0.5, 0.5);   
+        glBegin(GL_QUADS);                    ///pravimo kvadar koji je postolje
+       // glNormal3f(0.0, 1,0.0);
+        glTexCoord2f(0, 0);
+        glVertex3f(-1.1,0,1.1);
+        //glNormal3f(0.0, 1,0.0);
+        glTexCoord2f(1, 0);
+        glVertex3f(-1.1,0,-1.1);
+        //glNormal3f(0.0, 1,0.0);
+        glTexCoord2f(1, 0.5);
+        glVertex3f(1.1,0,-1.1);
+        //glNormal3f(0.0, 1,0.0);
+        glTexCoord2f(0, 0.5);
+        glVertex3f(1.1,0,1.1);
+         // glNormal3f(0.0, 1,0.0);
+        
+        //gornji
+        glTexCoord2f(0, 0);
+        glVertex3f(-1.1,0,-1.1);
+        glTexCoord2f(1, 0);
+        glVertex3f(-1.1,-0.3,-1.1);
+        glTexCoord2f(1, 0.5);
+        glVertex3f(1.1,-0.3,-1.1);
+        glTexCoord2f(0, 0.5);
+        glVertex3f(1.1,0,-1.1);
+        
+         //desni
+        glTexCoord2f(0, 0);
+        glVertex3f(1.1,0,1.1);
+        glTexCoord2f(1, 0);
+        glVertex3f(1.1,-0.3,1.1);
+        glTexCoord2f(1, 0.5);
+        glVertex3f(1.1,-0.3,-1.1);
+        glTexCoord2f(0, 0.5);
+        glVertex3f(1.1,0,-1.1);
+        //levi
+         glTexCoord2f(0, 0);
+        glVertex3f(-1.1,0,1.1);
+        glTexCoord2f(1, 0);
+        glVertex3f(-1.1,-0.3,1.1);
+        glTexCoord2f(1, 0.5);
+        glVertex3f(-1.1,-0.3,-1.1);
+        glTexCoord2f(0, 0.5);
+        glVertex3f(-1.1,0,-1.1);
+        
+        //donji
+        glTexCoord2f(0, 0);
+        glVertex3f(1.1,0,1.1);
+        glTexCoord2f(1, 0);
+        glVertex3f(1.1,-0.3,1.1);
+        glTexCoord2f(1, 0.5);
+        glVertex3f(-1.1,-0.3,1.1);
+        glTexCoord2f(0, 0.5);
+        glVertex3f(-1.1,0,1.1);
+        
+        //ispod
+         glTexCoord2f(0, 0);
+        glVertex3f(-1.1,-0.3,1.1);
+        glTexCoord2f(1, 0);
+        glVertex3f(-1.1,-0.3,-1.1);
+        glTexCoord2f(1, 0.5);
+        glVertex3f(1.1,-0.3,-1.1);
+        glTexCoord2f(0, 0.5);
+        glVertex3f(1.1,-0.3,1.1);
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glPopMatrix();
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+   
 	//Crtanje unutrasnjosti lavirinta
 	draw_labyrinth();
-
+    
+        glBindTexture(GL_TEXTURE_2D, 0);
 	glLightfv(GL_LIGHT0, GL_POSITION,light_position);
         glMaterialf(GL_FRONT, GL_SHININESS,shininess_l);
         glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_l);
@@ -258,7 +549,7 @@ static void on_display(void)
 	
 
 
-	//Pod i svetlo
+	//Svetlo
 
 
 	GLfloat ambient_coeffs_floor[]={0.3,1,1,0};
@@ -275,13 +566,13 @@ static void on_display(void)
         glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_floor);
         glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_floor);
         glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_floor);
-	glPushMatrix();
-	x=2.0;
-	t=0.03;
-	z=2;	
-	glTranslatef(0.5,0,0);
-	draw_wall(t,x,z);
-	glPopMatrix();
+// 	glPushMatrix();
+// 	x=2.0;
+// 	t=0.03;
+// 	z=2;	
+// 	glTranslatef(0.5,0,0);
+// 	draw_wall(t,x,z);
+// 	glPopMatrix();
 
 //postavljamo boju za lopticu i crtamo lopticu
 
@@ -296,8 +587,9 @@ static void on_display(void)
         glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_ball);
 	
 
-	draw_ball();
-
+       
+        draw_ball();//Our character to follow
+   
 
 
     glutSwapBuffers();
@@ -307,9 +599,7 @@ static void draw_ball(){
 
 	glPushMatrix();
 	glColor3f(1,1,0);
-	glRotatef(posX,1,0,0);
-	glRotatef(posZ,0,0,1);
-	glTranslatef(posX,0.04,posZ);
+        glTranslatef(kx,ky,kz);
 	glutSolidSphere(0.05,40,40);
 	glPopMatrix();
 
@@ -319,11 +609,148 @@ static void draw_ball(){
 static void draw_wall(float t,float x, float z){
 
 	glPushMatrix();
+        glNormal3f(0,0,1);
 	glTranslatef(0.5,0.5*t,1);
-	glScalef(x,t,z);
-	glutSolidCube(1.0);
-	glPopMatrix();
+        glScalef(x,t,z);
+//          glBegin(GL_POLYGON);
+//          glVertex3f(  0.5, -0.5, 0.5 );
+//          glVertex3f(  0.5,  0.5, 0.5 );
+//          glVertex3f( -0.5,  0.5, 0.5 );
+//          glVertex3f( -0.5, -0.5, 0.5 );
+//          glEnd();
+//          glPushMatrix();
+//          glTranslatef(1,0,0);
+//          glBindTexture(GL_TEXTURE_2D, names[0]);
+//          glBegin(GL_QUADS);
+//          
+//          glNormal3f(0, 0, 1);
+//  
+//          glTexCoord2f(0, 0);
+//          glVertex3f(0, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0);
+//          glVertex3f(x, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0.25);
+//          glVertex3f(x, t, 0);
+//  
+//          glTexCoord2f(0, 0.25);
+//          glVertex3f(0, t, 0);
+//          glEnd();
+//          glPopMatrix();
+//   
+//  // Purple side - RIGHT
+//          glBegin(GL_POLYGON);
+//          glVertex3f( 0.5, -0.5, -0.5 );
+//          glVertex3f( 0.5,  0.5, -0.5 );
+//          glVertex3f( 0.5,  0.5,  0.5 );
+//          glVertex3f( 0.5, -0.5,  0.5 );
+//          glEnd();
+//          glPushMatrix();
+//          glTranslatef(2,0,0);
+//          glBindTexture(GL_TEXTURE_2D, names[0]);
+//          glBegin(GL_QUADS);
+//          glNormal3f(0, 0, 1);
+//  
+//          glTexCoord2f(0, 0);
+//          glVertex3f(0, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0);
+//          glVertex3f(x, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0.25);
+//          glVertex3f(x, t, 0);
+//  
+//          glTexCoord2f(0, 0.25);
+//          glVertex3f(0, t, 0);
+//          glEnd();
+//          glPopMatrix();
+//      // Green side - LEFT
+//          glBegin(GL_POLYGON);
+//          glVertex3f( -0.5, -0.5,  0.5 );
+//          glVertex3f( -0.5,  0.5,  0.5 );
+//          glVertex3f( -0.5,  0.5, -0.5 );
+//          glVertex3f( -0.5, -0.5, -0.5 );
+//          glEnd();
+//         glPushMatrix();
+//         glTranslatef(3,0,0);
+//          glBindTexture(GL_TEXTURE_2D, names[0]);
+//          glBegin(GL_QUADS);
+//          glNormal3f(0, 0, 1);
+// // 
+//          glTexCoord2f(0, 0);
+//          glVertex3f(0, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0);
+//          glVertex3f(x, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0.25);
+//          glVertex3f(x, t, 0);
+//  
+//          glTexCoord2f(0, 0.25);
+//          glVertex3f(0, t, 0);
+//          glEnd();
+//          glPopMatrix();
+//      // Blue side - TOP
+//          glBegin(GL_POLYGON);
+//          glVertex3f(  0.5,  0.5,  0.5 ); 
+//          glVertex3f(  0.5,  0.5, -0.5 );
+//          glVertex3f( -0.5,  0.5, -0.5 );
+//          glVertex3f( -0.5,  0.5,  0.5 );
+//          glEnd();
+// //         
+//          
+//         glPushMatrix();
+//         glTranslatef(4,0,0);
+//          glBindTexture(GL_TEXTURE_2D, names[0]);
+//          glBegin(GL_QUADS);
+//          glNormal3f(0, 0, 1);
+//  
+//          glTexCoord2f(0, 0);
+//          glVertex3f(0, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0);
+//          glVertex3f(x, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0.25);
+//          glVertex3f(x, t, 0);
+//  
+//          glTexCoord2f(0, 0.25);
+//          glVertex3f(0, t, 0);
+//          glEnd();
+//          glPopMatrix();
+//      // Red side - BOTTOM
+//          glBegin(GL_POLYGON);
+//          glVertex3f(  0.5, -0.5, -0.5 );
+//          glVertex3f(  0.5, -0.5,  0.5 );
+//          glVertex3f( -0.5, -0.5,  0.5 );
+//          glVertex3f( -0.5, -0.5, -0.5 );
+//          glEnd();
+// //         
+//          glPushMatrix();
+//          glTranslatef(5,0,0);
+//          glBindTexture(GL_TEXTURE_2D, names[0]);
+//          glBegin(GL_QUADS);
+//          glNormal3f(0, 0, 1);
+//  
+//          glTexCoord2f(0, 0);
+//          glVertex3f(0, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0);
+//          glVertex3f(1, 0, 0);
+//  
+//          glTexCoord2f(0.5, 0.25);
+//          glVertex3f(1, 1, 0);
+//  
+//          glTexCoord2f(0, 0.25);
+//          glVertex3f(0, 1, 0);
+//          glEnd();
+//          glPopMatrix();
+         glutSolidCube(1);
+//         glBindTexture(GL_TEXTURE_2D, 0);
 
+        glPopMatrix();
+        
 }
 
 //Funkcija za crtanje unutrasnjosti lavirinta:
@@ -412,7 +839,8 @@ static void draw_labyrinth(){
 	x=0.5;
 	t=0.03;
 	z=0.2;
-	glTranslatef(-0.2,-0.7,wall1Z+0.6);
+	wall2Z=wall1Z+0.6;
+	glTranslatef(-0.2,-0.7,wall2Z);
 	draw_wall(0.1,x,z);
 	glPopMatrix(); 
 
@@ -429,9 +857,116 @@ static void draw_labyrinth(){
 	glRotatef(90,0,0,1);
 	x=0.5;
 	z=0.3;
-	glTranslatef(-0.2,-0.4,wall1Z+0.5);
+	wall3Z=wall1Z+0.5;
+	glTranslatef(-0.2,-0.4,wall3Z);
 	draw_wall(0.1,x,z);
 	glPopMatrix(); 
 
 
+}
+
+
+void povecaj_z(){
+  
+int check=check_function();
+ if(check_function()==0){
+      kx=0;
+    kz=1;
+	}
+else
+     kz+=0.03;
+   
+}
+void smanji_z(){
+int check=check_function();
+if(check_function()==0){
+      kx=0;
+    kz=1;
+	}
+else
+    kz-=0.03;
+   
+}
+void povecaj_x(){
+int check=check_function();
+if(check_function()==0){
+      kx=0;
+    kz=1;
+	}
+else
+      kx+=0.03;
+     
+}
+void smanji_x(){
+int check=check_function();
+if(check_function()==0){
+      kx=0;
+    kz=1;
+	}
+else
+    kx-=0.03;
+  
+}
+void povecaj_y(){
+int check=check_function();
+if(check_function()==0){
+      kx=0;
+      kz=1;
+	}
+
+else
+
+      ky+=0.03;
+     
+}
+void smanji_y(){
+    ky-=0.01;
+}
+void nadji_w(){
+    if((angle>=0 && angle<90) || (angle<0 && angle>=-90)){
+        povecaj_z();
+    }
+    else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360)){
+        smanji_x();
+    }
+    else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270)){
+        smanji_z();
+    }
+    else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180)){
+        povecaj_x();
+    }
+}
+void nadji_s(){
+    if((angle>=0 && angle<90) || (angle<0 && angle>=-90))
+        smanji_z();
+    else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360))
+        povecaj_x();
+    else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270))
+        povecaj_z();
+    else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180))
+        smanji_x();
+}
+void nadji_a(){
+    
+    if((angle>=0 && angle<90) || (angle<0 && angle>=-90))
+        povecaj_x();
+    else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360))
+        povecaj_z();
+    else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270))
+        smanji_x();
+    else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180))
+        smanji_z();
+    
+}
+void nadji_d(){
+    
+    if((angle>=0 && angle<90) || (angle<0 && angle>=-90))
+        smanji_x();
+    else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360))
+        smanji_z();
+    else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270))
+        povecaj_x();
+    else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180))
+        povecaj_z();
+    
 }

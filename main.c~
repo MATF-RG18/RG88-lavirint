@@ -1,115 +1,116 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
-
-
+#include<math.h>
+#define TIMER_INTERVAL 40
 #define TIMER_ID 0
-#define TIMER_INTERVAL 20
 
-static int animation_ongoing=1;
-static int animation_parameter=0;
-float posX=0.0;
-float posY=0.0;
-float posZ=0.0;
+static int window_width, window_height;
 
-float wall1X=-2;
-float wall2X=0.8;
+float posX=1;
+float posY=1;
+float posZ=1;
+float wall1Z=0.3;
+int wall_direction=-1;
+float x=0;
+float t=0;
+float z=0;
+const static float pi = 3.141592653589793;
 
-static float t;
 
-static void draw_ball();
-static void draw_wall(float t);
+static void draw_wall(float t,float x,float z);
 static void draw_labyrinth();
+static void on_keyboard(unsigned char key, int x, int y);
+static void on_reshape(int width, int height);
 static void on_display(void);
-static void on_reshape(int height,int width);
-static void on_keyboard(unsigned char,int x, int y);
+static void draw_ball();
 static void on_timer(int value);
 
-int main(int argc, char ** argv)
+
+
+int main(int argc, char **argv)
 {
-	glutInit(&argc, argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DOUBLE);   
-        glutInitWindowPosition(150,150);
-        glutInitWindowSize(1000,1000);
-        glutCreateWindow("Lavirint");
+
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
+
+
+    glutInitWindowSize(600, 600);
+    glutInitWindowPosition(100, 100);
+    glutCreateWindow("Lavirint");
+
+
+    glutKeyboardFunc(on_keyboard);
+    glutReshapeFunc(on_reshape);
+    glutDisplayFunc(on_display);
+
+    glClearColor(0.68,0.98,0.68,0);
+    glEnable(GL_DEPTH_TEST);
+    glLineWidth(2);
    
-        glutDisplayFunc(on_display);
-        glutReshapeFunc(on_reshape);
-        glutKeyboardFunc(on_keyboard);
-    
-        glClearColor(0.68,0.98,0.68,0);
 
-        glEnable(GL_DEPTH_TEST);
+    glutMainLoop();
 
-
-        glutMainLoop();
- 
-        return 0;
+    return 0;
 }
 
 
-static void on_reshape(int width,int height){
-
-	glViewport(0,0,width,height);
-
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(30,(float)width/height,1,25);
-
-}
 
 static void on_timer(int value){
 
 	if(value!=TIMER_ID)
-		return;
-	
-	//Pomeranje zidova:
-	
-	if(wall1X<0.8){
-	wall1X+=0.01;
-	}
+	return;
 
-	if(wall2X>-2){
-	wall2X-=0.01;
-	}
 
-		
+	if(wall_direction==1){
+	wall1Z+=0.0001;
+	}
+	else
+	wall1Z-=0.0001;
+
+	if(wall1Z<-0.3 || wall1Z>0.3){
+	wall_direction=-wall_direction;
+}
+
 
 	glutPostRedisplay();
-
 	glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
-
 }
+
 
 static void on_keyboard(unsigned char key, int x, int y){
 //Podesavamo da se kuglica krece na w,a,s,d,r i f 
+	
 	switch(key){
 	case 27:
 		exit(0);
 	break;
+
+	case 's':
+	case 'S':
+		posX-=0.1;
+
+
+	break;
+	
 	case 'w':
 	case 'W':
-		posY+=0.1;
-	break;
-	case 'a':
-	case 'A':
-		posX-=0.1;
+
+		posX+=0.1;
+
+	
 	break;
 	case 'd':
 	case 'D':
-		posX+=0.1;
-	break;
-	case 's':
-	case 'S':
-		posY-=0.1;
-	break;
-	case 'r':
-	case 'R':
 		posZ+=0.1;
+		//lx+=0.1f;
+	 
 	break;
-	case 'f':
-	case 'F':
-		posZ-=0.1;
+	case 'A':
+	case 'a':
+	
+	posZ-=0.1;
+
+    
 	break;
 
 }
@@ -117,58 +118,80 @@ static void on_keyboard(unsigned char key, int x, int y){
 
 	glutPostRedisplay();
 }
+static void on_reshape(int width, int height)
+{
+
+    window_width = width;
+    window_height = height;
+}
 
 static void on_display(void)
 {
-	glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(0,-4,17,0,0,0,0,1,0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-        //Postavljamo boju i svetlo 
+    glViewport(0, 0, window_width, window_height);
 
-	GLfloat light_position[]={1,1,1.0,0}; 
-	GLfloat light_ambient[]={0.0,0.0,0.0,1};
-	GLfloat light_diffuse[]={0.7,0.7,0.7,1};
-	GLfloat light_specular[]={0.9,0.9,0.9,1};
-	
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+
+    gluPerspective(
+           30,
+            window_width/(float)window_height,
+            1, 25);
+
+    glMatrixMode(GL_MODELVIEW);
+
+
     
+    glLoadIdentity();
+          // gluLookAt(posX + (cos(90)*2), posY + (2*sin(90)), posZ, posX, posY, posZ, 0, 1, 0);
 
+    gluLookAt(6,6,6,0,0,0,0,1,0);
+
+    glPushMatrix();
+    glColor3f(0, 0, 1);
+    glTranslatef(1,1,1);
+    glScalef(2,2,2);
+    glutWireCube(1);
+    glPopMatrix();
+
+    
+    glPopMatrix();
+    glBegin(GL_LINES);
+        glColor3f(1,0,0);
+        glVertex3f(0,0,0);
+        glVertex3f(10,0,0);
+        
+        glColor3f(0,1,0);
+        glVertex3f(0,0,0);
+        glVertex3f(0,10,0);
+        
+        glColor3f(0,0,1);
+        glVertex3f(0,0,0);
+        glVertex3f(0,0,10);
+    glEnd();
+
+
+	glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
+	//Crtamo zidove lavirinta i namestamo boju
+	GLfloat light_position[]={2,0,-1,1}; 
+	GLfloat ambient_coeffs_l[]={0.3,0.3,1,0};
+        GLfloat diffuse_coeffs_l[]={0.3,0.3,1,0};
+        GLfloat specular_coeffs_l[]={0.8,0.8,0.3,0};
+        GLfloat shininess_l=30;
+
+	
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 
-        glLightfv(GL_LIGHT0, GL_POSITION,light_position);
-        glLightfv(GL_LIGHT0, GL_AMBIENT,light_ambient);
-        glLightfv(GL_LIGHT0, GL_DIFFUSE,light_diffuse);
-        glLightfv(GL_LIGHT0, GL_SPECULAR,light_specular);
+	//Crtanje unutrasnjosti lavirinta
+	draw_labyrinth();
 
-
-        GLfloat ambient_coeffs_ball[]={1,0.1,0,0};
-        GLfloat diffuse_coeffs_ball[]={1,0.3,0,0};
-        GLfloat specular_coeffs_ball[]={1,1,1,0};
-        GLfloat shininess_ball=30;
-
-        glMaterialf(GL_FRONT, GL_SHININESS,shininess_ball);
-        glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_ball);
-        glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_ball);
-        glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_ball);
-
-        //crtamo lopticu
-	t=0.03;
-        glPushMatrix();
-	draw_ball();
-        glPopMatrix();
-
-
-	//Postavljamo boju lavirinta
-
-	GLfloat ambient_coeffs_l[]={0.3,0.3,1,0};
-        GLfloat diffuse_coeffs_l[]={0.3,0.3,1,0};
-        GLfloat specular_coeffs_l[]={0.3,0.5,0.7,0};
-        GLfloat shininess_l=30;
-
+	glLightfv(GL_LIGHT0, GL_POSITION,light_position);
         glMaterialf(GL_FRONT, GL_SHININESS,shininess_l);
         glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_l);
         glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_l);
@@ -176,107 +199,239 @@ static void on_display(void)
 
 
 
-
-	//crtamo zidove lavirinta
-	glPushMatrix();
-	glTranslatef(-2,2,0.3);
-	glScalef(3.2,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
-	glPushMatrix();
-	glTranslatef(1.5,2,0.3);
-	glScalef(3.2,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
-
+	//Crtanje zidova koji cine okvir lavirinta
 	
+	//Izlaz i zidovi pored
 	glPushMatrix();
 	glRotatef(90,0,0,1);
-	glTranslatef(-2,2,0.3);
-	glScalef(4,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
+	x=0.5;
+	z=1.0;
+	glTranslatef(-0.2,0,0.6);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
 
 	glPushMatrix();
-	glTranslatef(-2,-2,0.3);
-	glScalef(3.2,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=0.5;
+	glTranslatef(-0.2,0,-0.75);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
 
+
+	//ulaz i zidovi pored
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=1;
+	glTranslatef(-0.2,-2.1,0.6);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
 
 	glPushMatrix();
-	glRotatef(-90,0,0,1);
-	glTranslatef(-2,4.7,0.3);
-	glScalef(4,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=0.5;
+	glTranslatef(-0.2,-2.1,-0.75);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+	//zidove sa strane:
 
 	glPushMatrix();
-	glTranslatef(1.5,-2,0.3);
-	glScalef(3.2,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
-	//Unutrasnjost lavirinta:
-	glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
-	draw_labyrinth();
+	glRotatef(90,0,1,0);
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=2;
+	glTranslatef(-0.2,0,0);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
 
-
-	glutSwapBuffers();
+	glPushMatrix();
+	glRotatef(90,0,1,0);
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=2;
+	glTranslatef(-0.2,2,0);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
 	
+
+
+	//Pod i svetlo
+
+
+	GLfloat ambient_coeffs_floor[]={0.3,1,1,0};
+        GLfloat diffuse_coeffs_floor[]={0.1,1,1,0};
+        GLfloat specular_coeffs_floor[]={0.3,0.8,0.3,1};
+        GLfloat shininess_floor=30;
+
+	
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+
+        glMaterialf(GL_FRONT, GL_SHININESS,shininess_floor);
+        glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_floor);
+        glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_floor);
+        glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_floor);
+	glPushMatrix();
+	x=2.0;
+	t=0.03;
+	z=2;	
+	glTranslatef(0.5,0,0);
+	draw_wall(t,x,z);
+	glPopMatrix();
+
+//postavljamo boju za lopticu i crtamo lopticu
+
+	GLfloat ambient_coeffs_ball[]={1,0.1,0,0};
+        GLfloat diffuse_coeffs_ball[]={1,0.3,0,0};
+        GLfloat specular_coeffs_ball[]={0.6,0.7,0.8,0};
+        GLfloat shininess_ball=30;
+
+        glMaterialf(GL_FRONT, GL_SHININESS,shininess_ball);
+        glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_ball);
+        glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_ball);
+        glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_ball);
+	
+
+	draw_ball();
+
+
+
+    glutSwapBuffers();
 }
 
-//Funkcija za crtanje loptice
 static void draw_ball(){
 
 	glPushMatrix();
 	glColor3f(1,1,0);
-	glTranslatef(posX,posY,posZ);
-	glutSolidSphere(0.1,40,40);
+	glRotatef(posX,1,0,0);
+	glRotatef(posZ,0,0,1);
+	glTranslatef(posX,0.04,posZ);
+	glutSolidSphere(0.05,40,40);
 	glPopMatrix();
 
 }
-//Funkcija za crtanje zidova lavirinta 
-//Kod napisan uz pomoc: https://stackoverflow.com/questions/28547173/creating-a-3d-room-in-opengl-c
 
-static void draw_wall(float t){
+
+static void draw_wall(float t,float x, float z){
 
 	glPushMatrix();
 	glTranslatef(0.5,0.5*t,1);
+	glScalef(x,t,z);
 	glutSolidCube(1.0);
 	glPopMatrix();
 
 }
 
+//Funkcija za crtanje unutrasnjosti lavirinta:
 static void draw_labyrinth(){
 
-	glPushMatrix();
-	glTranslatef(-2,-1.5,0);
-	glScalef(5.5,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
 
-	glPushMatrix();
-	glTranslatef(1.6,-1,0);
-	glScalef(3.2,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
+	GLfloat ambient_coeffs_wall2[]={1,0.1,0,0};
+        GLfloat diffuse_coeffs_wall2[]={1,0.3,0,0};
+        GLfloat specular_coeffs_wall2[]={0.8,0.7,0.8,0};
+        GLfloat shininess_wall2=30;
 
-	glPushMatrix();
-	glTranslatef(-2,-1,0);
-	glScalef(3.2,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
-	//Crtamo pokretne zidove
-	glPushMatrix();
-	glTranslatef(wall1X,-0.5,0);
-	glScalef(4,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
-
-	glPushMatrix();
-	glTranslatef(wall2X,0,0);
-	glScalef(4,t,2);
-	draw_wall(0.03);
-	glPopMatrix();
+        glMaterialf(GL_FRONT, GL_SHININESS,shininess_wall2);
+        glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_wall2);
+        glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_wall2);
+        glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_wall2);
 	
+	
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=1.6;
+	glTranslatef(-0.2,-1.8,0.2);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+	//pokretni zidovi:
+	
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	t=0.03;
+	z=1.4;
+	glTranslatef(-0.2,-1.5,wall1Z);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+	
+
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	t=0.03;
+	z=1.4;
+	glTranslatef(-0.2,-1.3,-wall1Z);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	
+	z=1.4;
+	glTranslatef(-0.2,-1.0,0.3);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=0.2;
+	glTranslatef(-0.2,-1.0,-0.75);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=0.5;
+	glTranslatef(-0.2,-0.7,-0.75);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	t=0.03;
+	z=0.7;
+	glTranslatef(-0.2,-0.7,0);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	t=0.03;
+	z=0.2;
+	glTranslatef(-0.2,-0.7,wall1Z+0.6);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=1.5;
+	glTranslatef(-0.2,-0.4,0);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+
+	glPushMatrix();
+	glRotatef(90,0,0,1);
+	x=0.5;
+	z=0.3;
+	glTranslatef(-0.2,-0.4,wall1Z+0.5);
+	draw_wall(0.1,x,z);
+	glPopMatrix(); 
+
+
 }
