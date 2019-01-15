@@ -33,16 +33,16 @@ static void draw_ball();
 static void on_timer(int value);
 
 static int check_function();
-static void nadji_w();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje loptice udesno
-static void nadji_s();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica ulevo
-static void nadji_a();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nagore
-static void nadji_d();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nadole
-static void povecaj_x();//fja povecava x koordinatu loptice
-static void povecaj_y();//fja povecava y koordinatu loptice
-static void povecaj_z();//fja povecava z koordinatu loptice
-static void smanji_x();//fja smanjuje x koordinatu loptice
-static void smanji_y();//fja smanjuje y koordinatu loptice
-static void smanji_z();//fja smanjuje z koordinatu loptice
+static void right_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje loptice udesno
+static void left_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica ulevo
+static void up_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nagore
+static void down_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nadole
+static void increment_x();//fja povecava x koordinatu loptice
+static void increment_y();//fja povecava y koordinatu loptice
+static void increment_z();//fja povecava z koordinatu loptice
+static void dec_x();//fja smanjuje x koordinatu loptice
+static void dec_y();//fja smanjuje y koordinatu loptice
+static void dec_z();//fja smanjuje z koordinatu loptice
 
  void processSpecialKeys(int key, int xx, int yy) {
         
@@ -291,43 +291,35 @@ static void on_timer(int value){
 
 
 static void on_keyboard(unsigned char tast, int x, int y){
-//Podesavamo da se kuglica krece na w,a,s,d,r i f 
-        /*kuglica se krece gore*/
+//Podesavamo da se kuglica krece
 
 
         if(tast==27)
             exit(0);
+   //Kuglica se krece gore
     if(tast=='w' || tast=='W')
-            nadji_a();
+            up_func();
     /*Kuglica se krece dole*/
     if(tast=='s' || tast=='S'){
     
-           nadji_d();
+           down_func();
         
     }
     /*Kuglica se krece ulevo*/
     if(tast=='a' || tast=='A'){
         
-            nadji_s();
+            left_func();
         
         
     }
     /*Kuglica se krece udesno*/
     if(tast=='d' || tast=='D'){
         
-           // nadji_d();
-            nadji_w();
+            right_func();
       
         
     }
-    /*samo opcija 2 ima ove tastere i kuglica se krece vertikalno nagore*/
-    if((tast=='q' || tast=='Q')){
-        povecaj_y();
-    }
-    /*samo opcija 2 ima ove tastere i kuglica se krece vertikalno nadole*/
-    if((tast=='e' || tast=='E') ){
-        smanji_y();
-    }
+    
     
 	glutPostRedisplay();
 }
@@ -409,20 +401,20 @@ static void on_display(void)
         
         glBindTexture(GL_TEXTURE_2D, names[0]);
         glColor3f(0.5, 0.5, 0.5);   
-        glBegin(GL_QUADS);                    ///pravimo kvadar koji je postolje
-       // glNormal3f(0.0, 1,0.0);
+        glBegin(GL_QUADS);                    ///pravimo postolje
+
         glTexCoord2f(0, 0);
         glVertex3f(-1.1,0,1.1);
-        //glNormal3f(0.0, 1,0.0);
+
         glTexCoord2f(1, 0);
         glVertex3f(-1.1,0,-1.1);
-        //glNormal3f(0.0, 1,0.0);
+
         glTexCoord2f(1, 0.5);
         glVertex3f(1.1,0,-1.1);
-        //glNormal3f(0.0, 1,0.0);
+
         glTexCoord2f(0, 0.5);
         glVertex3f(1.1,0,1.1);
-         // glNormal3f(0.0, 1,0.0);
+
         
         //gornji
         glTexCoord2f(0, 0);
@@ -566,13 +558,6 @@ static void on_display(void)
         glMaterialfv(GL_FRONT, GL_AMBIENT,ambient_coeffs_floor);
         glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_floor);
         glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_floor);
-// 	glPushMatrix();
-// 	x=2.0;
-// 	t=0.03;
-// 	z=2;	
-// 	glTranslatef(0.5,0,0);
-// 	draw_wall(t,x,z);
-// 	glPopMatrix();
 
 //postavljamo boju za lopticu i crtamo lopticu
 
@@ -588,7 +573,7 @@ static void on_display(void)
 	
 
        
-        draw_ball();//Our character to follow
+        draw_ball();
    
 
 
@@ -612,142 +597,9 @@ static void draw_wall(float t,float x, float z){
         glNormal3f(0,0,1);
 	glTranslatef(0.5,0.5*t,1);
         glScalef(x,t,z);
-//          glBegin(GL_POLYGON);
-//          glVertex3f(  0.5, -0.5, 0.5 );
-//          glVertex3f(  0.5,  0.5, 0.5 );
-//          glVertex3f( -0.5,  0.5, 0.5 );
-//          glVertex3f( -0.5, -0.5, 0.5 );
-//          glEnd();
-//          glPushMatrix();
-//          glTranslatef(1,0,0);
-//          glBindTexture(GL_TEXTURE_2D, names[0]);
-//          glBegin(GL_QUADS);
-//          
-//          glNormal3f(0, 0, 1);
-//  
-//          glTexCoord2f(0, 0);
-//          glVertex3f(0, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0);
-//          glVertex3f(x, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0.25);
-//          glVertex3f(x, t, 0);
-//  
-//          glTexCoord2f(0, 0.25);
-//          glVertex3f(0, t, 0);
-//          glEnd();
-//          glPopMatrix();
-//   
-//  // Purple side - RIGHT
-//          glBegin(GL_POLYGON);
-//          glVertex3f( 0.5, -0.5, -0.5 );
-//          glVertex3f( 0.5,  0.5, -0.5 );
-//          glVertex3f( 0.5,  0.5,  0.5 );
-//          glVertex3f( 0.5, -0.5,  0.5 );
-//          glEnd();
-//          glPushMatrix();
-//          glTranslatef(2,0,0);
-//          glBindTexture(GL_TEXTURE_2D, names[0]);
-//          glBegin(GL_QUADS);
-//          glNormal3f(0, 0, 1);
-//  
-//          glTexCoord2f(0, 0);
-//          glVertex3f(0, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0);
-//          glVertex3f(x, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0.25);
-//          glVertex3f(x, t, 0);
-//  
-//          glTexCoord2f(0, 0.25);
-//          glVertex3f(0, t, 0);
-//          glEnd();
-//          glPopMatrix();
-//      // Green side - LEFT
-//          glBegin(GL_POLYGON);
-//          glVertex3f( -0.5, -0.5,  0.5 );
-//          glVertex3f( -0.5,  0.5,  0.5 );
-//          glVertex3f( -0.5,  0.5, -0.5 );
-//          glVertex3f( -0.5, -0.5, -0.5 );
-//          glEnd();
-//         glPushMatrix();
-//         glTranslatef(3,0,0);
-//          glBindTexture(GL_TEXTURE_2D, names[0]);
-//          glBegin(GL_QUADS);
-//          glNormal3f(0, 0, 1);
-// // 
-//          glTexCoord2f(0, 0);
-//          glVertex3f(0, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0);
-//          glVertex3f(x, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0.25);
-//          glVertex3f(x, t, 0);
-//  
-//          glTexCoord2f(0, 0.25);
-//          glVertex3f(0, t, 0);
-//          glEnd();
-//          glPopMatrix();
-//      // Blue side - TOP
-//          glBegin(GL_POLYGON);
-//          glVertex3f(  0.5,  0.5,  0.5 ); 
-//          glVertex3f(  0.5,  0.5, -0.5 );
-//          glVertex3f( -0.5,  0.5, -0.5 );
-//          glVertex3f( -0.5,  0.5,  0.5 );
-//          glEnd();
-// //         
-//          
-//         glPushMatrix();
-//         glTranslatef(4,0,0);
-//          glBindTexture(GL_TEXTURE_2D, names[0]);
-//          glBegin(GL_QUADS);
-//          glNormal3f(0, 0, 1);
-//  
-//          glTexCoord2f(0, 0);
-//          glVertex3f(0, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0);
-//          glVertex3f(x, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0.25);
-//          glVertex3f(x, t, 0);
-//  
-//          glTexCoord2f(0, 0.25);
-//          glVertex3f(0, t, 0);
-//          glEnd();
-//          glPopMatrix();
-//      // Red side - BOTTOM
-//          glBegin(GL_POLYGON);
-//          glVertex3f(  0.5, -0.5, -0.5 );
-//          glVertex3f(  0.5, -0.5,  0.5 );
-//          glVertex3f( -0.5, -0.5,  0.5 );
-//          glVertex3f( -0.5, -0.5, -0.5 );
-//          glEnd();
-// //         
-//          glPushMatrix();
-//          glTranslatef(5,0,0);
-//          glBindTexture(GL_TEXTURE_2D, names[0]);
-//          glBegin(GL_QUADS);
-//          glNormal3f(0, 0, 1);
-//  
-//          glTexCoord2f(0, 0);
-//          glVertex3f(0, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0);
-//          glVertex3f(1, 0, 0);
-//  
-//          glTexCoord2f(0.5, 0.25);
-//          glVertex3f(1, 1, 0);
-//  
-//          glTexCoord2f(0, 0.25);
-//          glVertex3f(0, 1, 0);
-//          glEnd();
-//          glPopMatrix();
+
          glutSolidCube(1);
-//         glBindTexture(GL_TEXTURE_2D, 0);
+
 
         glPopMatrix();
         
@@ -866,7 +718,7 @@ static void draw_labyrinth(){
 }
 
 
-void povecaj_z(){
+void increment_z(){
   
 int check=check_function();
  if(check_function()==0){
@@ -877,7 +729,7 @@ else
      kz+=0.03;
    
 }
-void smanji_z(){
+void dec_z(){
 int check=check_function();
 if(check_function()==0){
       kx=0;
@@ -887,7 +739,7 @@ else
     kz-=0.03;
    
 }
-void povecaj_x(){
+void increment_x(){
 int check=check_function();
 if(check_function()==0){
       kx=0;
@@ -897,7 +749,7 @@ else
       kx+=0.03;
      
 }
-void smanji_x(){
+void dec_x(){
 int check=check_function();
 if(check_function()==0){
       kx=0;
@@ -907,7 +759,7 @@ else
     kx-=0.03;
   
 }
-void povecaj_y(){
+void increment_y(){
 int check=check_function();
 if(check_function()==0){
       kx=0;
@@ -919,54 +771,54 @@ else
       ky+=0.03;
      
 }
-void smanji_y(){
+void dec_y(){
     ky-=0.01;
 }
-void nadji_w(){
+void right_func(){
     if((angle>=0 && angle<90) || (angle<0 && angle>=-90)){
-        povecaj_z();
+        increment_z();
     }
     else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360)){
-        smanji_x();
+        dec_x();
     }
     else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270)){
-        smanji_z();
+        dec_z();
     }
     else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180)){
-        povecaj_x();
+        increment_x();
     }
 }
-void nadji_s(){
+void left_func(){
     if((angle>=0 && angle<90) || (angle<0 && angle>=-90))
-        smanji_z();
+        dec_z();
     else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360))
-        povecaj_x();
+        increment_x();
     else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270))
-        povecaj_z();
+        increment_z();
     else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180))
-        smanji_x();
+        dec_x();
 }
-void nadji_a(){
+void up_func(){
     
     if((angle>=0 && angle<90) || (angle<0 && angle>=-90))
-        povecaj_x();
+        increment_x();
     else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360))
-        povecaj_z();
+        increment_z();
     else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270))
-        smanji_x();
+        dec_x();
     else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180))
-        smanji_z();
+        dec_z();
     
 }
-void nadji_d(){
+void down_func(){
     
     if((angle>=0 && angle<90) || (angle<0 && angle>=-90))
-        smanji_x();
+        dec_x();
     else if((angle>=90 && angle<180) || (angle<-270 && angle>=-360))
-        smanji_z();
+        dec_z();
     else if((angle>=180 && angle<270) || (angle<-180 && angle>=-270))
-        povecaj_x();
+        increment_x();
     else if((angle>=270 && angle<360) ||(angle<-90 && angle>=-180))
-        povecaj_z();
+        dec_z();
     
 }
