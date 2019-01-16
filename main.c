@@ -10,9 +10,8 @@ static GLuint names[1];
 static int window_width, window_height;
 static float matrix[16]; //matrica za teksture
 
-float posX=1;
-float posY=1;
-float posZ=1;
+
+
 float wall1Z=0.3;
 float wall2Z;
 float wall3Z;
@@ -32,51 +31,48 @@ static void on_display(void);
 static void draw_ball();
 static void on_timer(int value);
 
-static int check_function();
-static void right_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje loptice udesno
-static void left_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica ulevo
-static void up_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nagore
-static void down_func();//na osnovu ugla rotacije preko strelica, odredjuje se kretanje kockica nadole
-static void increment_x();//fja povecava x koordinatu loptice
-static void increment_y();//fja povecava y koordinatu loptice
-static void increment_z();//fja povecava z koordinatu loptice
-static void dec_x();//fja smanjuje x koordinatu loptice
-static void dec_y();//fja smanjuje y koordinatu loptice
-static void dec_z();//fja smanjuje z koordinatu loptice
+static int  check_function(); //proverava da li se kuglica sudara sa zidom
+static void right_func();//na osnovu ugla rotacije preko tastature, odredjuje se kretanje loptice udesno
+static void left_func();//na osnovu ugla rotacije preko tastature, odredjuje se kretanje loptice ulevo
+static void up_func();//na osnovu ugla rotacije preko tastature, odredjuje se kretanje loptice nagore
+static void down_func();//na osnovu ugla rotacije preko tastature, odredjuje se kretanje loptice nadole
+static void increment_x();//povecava se x koordinata loptice
+static void increment_z();//povecava se z koordinata loptice
+static void dec_x();//smanjuje se x koordinata loptice
+static void dec_z();//smanjuje se z koordinata loptice 
 
  void processSpecialKeys(int key, int xx, int yy) {
         
-            switch (key) {
-                    case GLUT_KEY_LEFT :
-                            //pomeramo poziciju kamere
-                            angle -= 0.05f;
-                            if(angle<=-360)
-                                angle+=360;
-                            lx = sin(angle);
-                            lz =-cos(angle);
-                        
-                            break;
-                    case GLUT_KEY_RIGHT :
-                     
-                            //pomeramo poziciju kamere
-                            angle += 0.05f;
-                            if(angle>=360)
-                                angle-=360;
-                                lx = sin(angle);
-                                lz =-cos(angle);
+	switch (key) {
+		case GLUT_KEY_LEFT :
+                    //pomeramo poziciju kamere pomocu leve strelice na tastaturi
+			angle -= 0.05f;
+			if(angle<=-360)
+                         angle+=360;
+                        lx = sin(angle);
+                        lz =-cos(angle);
                         
                         break;
-                    case GLUT_KEY_UP :
-                            r -= 0.5;
+                case GLUT_KEY_RIGHT :
+                     //pomeramo poziciju kamere pomocu desne strelice na tastaruri
+                         angle += 0.05f;
+                         if(angle>=360)
+                           angle-=360;
+                          lx = sin(angle);
+                          lz =-cos(angle);
+                        
+                        break;
+                case GLUT_KEY_UP :
+                        r -= 0.5;
                        
                           
                             break;
-                    case GLUT_KEY_DOWN :
+                case GLUT_KEY_DOWN :
                         
-                            //zumiramo
-                            if(r+0.5>60)
-                                r=60;
-                            r += 0.5;
+                       //zumiramo
+                       if(r+0.5>60)
+                             r=60;
+                         r += 0.5;
                             
                         break;
             }
@@ -92,10 +88,10 @@ void camera (void) {
 }
 static void initialize(void)
 {
-    /* Objekat koji predstavlja teskturu ucitanu iz fajla. */
+    // Objekat koji predstavlja teskturu ucitanu iz fajla. 
     Image * image;
 
-    /* Ukljucuje se testiranje z-koordinate piksela. */
+    // Ukljucuje se testiranje z-koordinate piksela. 
     glEnable(GL_DEPTH_TEST);
 
     /* Ukljucuju se teksture. */
@@ -105,16 +101,14 @@ static void initialize(void)
               GL_TEXTURE_ENV_MODE,
               GL_REPLACE);
 
-    /*
-     * Inicijalizuje se objekat koji ce sadrzati teksture ucitane iz
-     * fajla.
-     */
+    //Inicijalizuje se objekat koji ce sadrzati teksture ucitane iz fajla.
+     
     image = image_init(0, 0);
 
     /* Kreira se prva tekstura. */
     image_read(image, FILENAME0);
 
-    /* Generisu se identifikatori tekstura. */
+    // Generisu se identifikatori tekstura. 
     glGenTextures(1, names);
 
     glBindTexture(GL_TEXTURE_2D, names[0]);
@@ -132,10 +126,10 @@ static void initialize(void)
 
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    /* Unistava se objekat za citanje tekstura iz fajla. */
+    // Unistava se objekat za citanje tekstura iz fajla. 
     image_done(image);
 
-    /* Inicijalizujemo matricu rotacije. */
+    // Inicijalizujemo matricu rotacije. 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glGetFloatv(GL_MODELVIEW_MATRIX, matrix);
@@ -176,104 +170,96 @@ int main(int argc, char **argv)
 //Funkcija koja proverava da li ce kuglica udariti u zid
 static int check_function(){
 
-printf("%f ",kx);
-printf("%f\n",kz);
 
-
-//if((kx >= 0.26 && kx<=0.44)  && (kz >0.26 && kz<1.76))
-//return 0;
-
-//if(kx==0.34 && kz>0.18)
-//return 0;
-//ulaz:
-if((kx>=-0.08 && kx<=-0.02) && (kz<=1.04 && kz>=0.56))
-return 1;
+	if((kx>=-0.08 && kx<=-0.02) && (kz<=1.04 && kz>=0.56))
+		return 1;
 //prvi deo
-if((kx>=-0.02 && kx<=0.25) && (kz>=0.16 && kz<=1.93))
-return 1;
+	if((kx>=-0.02 && kx<=0.25) && (kz>=0.16 && kz<=1.93))
+		return 1;
 //pokretni deo prvog dela
-if((kx>=0.21 && kx<=0.42) && (kz>=1.79 && kz<=1.93)){
-if(wall3Z+1.5<=kz){
-return 1;
-}
-}
+	if((kx>=0.21 && kx<=0.42) && (kz>=1.79 && kz<=1.93)){
+		if(wall3Z+1.5<=kz){
+		return 1;
+		}	
+	}
 //ulaz za drugi deo
-if((kx>=0.25 && kx<=0.45) && (kz>=0.14 && kz<=0.20))
-return 1;
+	if((kx>=0.25 && kx<=0.45) && (kz>=0.14 && kz<=0.20))
+		return 1;
 //drugi deo
-if((kx>=0.42 && kx<=0.56) && (kz>=0.16 && kz<=1.93))
-return 1;
+	if((kx>=0.42 && kx<=0.56) && (kz>=0.16 && kz<=1.93))
+		return 1;
 //pokretni deo drugog dela
-if((kx>=0.65 && kx<=0.71) && (kz>=1.41 && kz<=1.93)){
-if(wall2Z+1.4<=kz){
-return 1;
- }
-}
+	if((kx>=0.65 && kx<=0.71) && (kz>=1.41 && kz<=1.93)){
+		if(wall2Z+1.4<=kz){
+			return 1;
+			 }
+	}
 //ulaz za treci deo
-if((kx>=0.56 && kx<=0.72) && (kz>=0.55 && kz<=0.60))
-return 1;
+	if((kx>=0.56 && kx<=0.72) && (kz>=0.55 && kz<=0.60))
+		return 1;
 //treci deo I
-//if((kx>=0.45 && kx<=0.56) && (kz>=0.64 && kz<=1.35))
-//return 1;
+
 //treci deo II
 
-if((kx>=0.70 && kx<=0.84) && (kz>=0.16 && kz<=1.93))
-return 1;
+	if((kx>=0.70 && kx<=0.84) && (kz>=0.16 && kz<=1.93))
+		return 1;
 //ulaz za 4.deo
-if((kx>=0.82 && kx<=1.04) && (kz>=0.40 && kz<=0.56))
-return 1;
-//4.deo:
+	if((kx>=0.82 && kx<=1.04) && (kz>=0.40 && kz<=0.56))
+		return 1;
+//cetvrti deo I:
 
-if((kx>=1.04 && kx<=1.15) && (kz>=0.16 && kz<=1.93)){
-return 1;
-}
-//cetvrti deo zidovi koji se krecu
-if((kx>=1.15 && kx<=1.28) && (kz>=0.16 && kz<=1.93)){
-if(kz>=1.93-wall1Z+1.4 || kz<=-wall1Z+1){
-return 1;
- }
-}
+	if((kx>=1.04 && kx<=1.15) && (kz>=0.16 && kz<=1.93)){
+		return 1;
+	}
+//cetvrti deo II 
 
-//peti deo
-if((kx>=1.28 && kx<=1.36) &&(kz>=0.16 && kz<=1.93)){
-return 1;
-}
-//peti deo zidovi koji se krecu
-if((kx>=1.36 && kx<=1.52) && (kz>0.16 && kz<1.93)){
-if(kz!=wall1Z+1){
-return 1;
-}
+	if((kx>=1.14 && kx<=1.36) && (kz>=1.44 && kz<1.93)){
+		return 1;
+		}
 
-}
+
+//peti deo(koji je ujedno i zamka da ako pogresno loptica skrene vraca se na pocetak)
+	if((kx>=1.25 && kx<=1.52) &&(kz>=0.16 && kz<=1.93)){
+		return 1;
+		}
+//peti deo II
+	if((kx>=1.25 && kx<=1.52) && (kz>0.37 && kz<0.55)){
+	return 1;
+	}
+
+
+	if((kx>=1.25 && kx<=1.64) && (kz>0.16 && kz<0.55)){
+		return 1;
+		}
+
 
 //sesti deo
-if((kx>=1.52 && kx<=1.64) && (kz>0.16 && kz<1.93)){
-return 1;
-}
+	if((kx>=1.52 && kx<=1.60) && (kz>0.16 && kz<1.93)){
+		return 1;
+	}
 //ulaz sa sedmi deo
-if((kx>=1.64 && kx<=1.78) && (kz>0.16 && kz<0.37)){
-return 1;
-}
-//sedmi deo i kraj
-if((kx>=1.78 && kx <=1.94) && (kz>0.16 && kz<1.93)){
-return 1;
-}
+	if((kx>=1.64 && kx<=1.78) && (kz>0.16 && kz<0.37)){	
+		return 1;
+	}
+//sedmi deo i kraj-izlaz iz lavirinta
+	if((kx>=1.78 && kx <=1.94) && (kz>0.16 && kz<1.93)){
+		return 1;
+		}
 //kraj
-if((kx>=1.94 && kx<=2.06) && (kz>0.52 && kz<1.05))
-return 1;
+	if((kx>=1.94 && kx<=2.06) && (kz>0.52 && kz<1.05))
+		return 1;
 
 
 
 
-return 0;
+	return 0;
 }
 
 static void on_timer(int value){
-
+	
 	if(value!=TIMER_ID)
 	return;
-
-
+	//namestamo pravac i brzinu za pokretne zidove u lavirintu.
 	if(wall_direction==1){
 	wall1Z+=0.0001/20;
 	}
@@ -290,32 +276,36 @@ static void on_timer(int value){
 }
 
 
-static void on_keyboard(unsigned char tast, int x, int y){
+static void on_keyboard(unsigned char key, int x, int y){
 //Podesavamo da se kuglica krece
 
+   switch(key){
 
-        if(tast==27)
-            exit(0);
-   //Kuglica se krece gore
-    if(tast=='w' || tast=='W')
-            up_func();
-    /*Kuglica se krece dole*/
-    if(tast=='s' || tast=='S'){
+	case 27:
+	exit(0);
+	break;
+   //Kuglica se krece napred kada pritisnemo 'w'
+	case 'w':
+	case 'W':
+          up_func();
+            break;
+   //Kuglica se krece nazad kada pristisnemo 's'
+	case 's':
+	case 'S':
+    	  down_func();
+	   break;
+        
     
-           down_func();
+    //Kuglica se krece ulevo kada pritisnemo 'a'
+	case 'a':
+	case 'A':
+          left_func();
+	   break;
         
-    }
-    /*Kuglica se krece ulevo*/
-    if(tast=='a' || tast=='A'){
-        
-            left_func();
-        
-        
-    }
-    /*Kuglica se krece udesno*/
-    if(tast=='d' || tast=='D'){
-        
-            right_func();
+        case 'd':
+	case 'D':
+           right_func();
+	    break;
       
         
     }
@@ -352,22 +342,23 @@ static void on_display(void)
 
     
     glLoadIdentity(); 
+//Postavljamo kameru da prati kuglicu.
     gluLookAt(-1+r*lx,2,1+r*lz,
                   kx,ky,kz,
                   0,1,0
     );
     
-   // gluLookAt(6,6,6,0,0,0,0,1,0);
 
-    glPushMatrix();
+
+   /* glPushMatrix();
     glColor3f(0, 0, 1);
     glTranslatef(1,1,1);
     glScalef(2,2,2);
     glutWireCube(1);
-    glPopMatrix();
+    glPopMatrix(); */
 
     
-    glPopMatrix();
+   /* glPopMatrix();
     glBegin(GL_LINES);
         glColor3f(1,0,0);
         glVertex3f(0,0,0);
@@ -380,7 +371,7 @@ static void on_display(void)
         glColor3f(0,0,1);
         glVertex3f(0,0,0);
         glVertex3f(0,0,10);
-    glEnd();
+    glEnd();*/
 
 
 	glutTimerFunc(TIMER_INTERVAL,on_timer,TIMER_ID);
@@ -416,7 +407,7 @@ static void on_display(void)
         glVertex3f(1.1,0,1.1);
 
         
-        //gornji
+        //Crtamo gornji
         glTexCoord2f(0, 0);
         glVertex3f(-1.1,0,-1.1);
         glTexCoord2f(1, 0);
@@ -426,7 +417,7 @@ static void on_display(void)
         glTexCoord2f(0, 0.5);
         glVertex3f(1.1,0,-1.1);
         
-         //desni
+         //Crtamo desni
         glTexCoord2f(0, 0);
         glVertex3f(1.1,0,1.1);
         glTexCoord2f(1, 0);
@@ -435,7 +426,7 @@ static void on_display(void)
         glVertex3f(1.1,-0.3,-1.1);
         glTexCoord2f(0, 0.5);
         glVertex3f(1.1,0,-1.1);
-        //levi
+        //Crtamo levi
          glTexCoord2f(0, 0);
         glVertex3f(-1.1,0,1.1);
         glTexCoord2f(1, 0);
@@ -445,7 +436,7 @@ static void on_display(void)
         glTexCoord2f(0, 0.5);
         glVertex3f(-1.1,0,-1.1);
         
-        //donji
+        //Crtamo donji
         glTexCoord2f(0, 0);
         glVertex3f(1.1,0,1.1);
         glTexCoord2f(1, 0);
@@ -455,7 +446,7 @@ static void on_display(void)
         glTexCoord2f(0, 0.5);
         glVertex3f(-1.1,0,1.1);
         
-        //ispod
+        //Crtamo ispod
          glTexCoord2f(0, 0);
         glVertex3f(-1.1,-0.3,1.1);
         glTexCoord2f(1, 0);
@@ -464,11 +455,12 @@ static void on_display(void)
         glVertex3f(1.1,-0.3,-1.1);
         glTexCoord2f(0, 0.5);
         glVertex3f(1.1,-0.3,1.1);
-    glEnd();
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glPopMatrix();
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+        glEnd();
+       
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glPopMatrix();
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
    
 	//Crtanje unutrasnjosti lavirinta
 	draw_labyrinth();
@@ -484,7 +476,7 @@ static void on_display(void)
 
 	//Crtanje zidova koji cine okvir lavirinta
 	
-	//Izlaz i zidovi pored
+	//Ulaz i zidovi pored
 	glPushMatrix();
 	glRotatef(90,0,0,1);
 	x=0.5;
@@ -502,7 +494,7 @@ static void on_display(void)
 	glPopMatrix(); 
 
 
-	//ulaz i zidovi pored
+	//Izlaz i zidovi pored
 	glPushMatrix();
 	glRotatef(90,0,0,1);
 	x=0.5;
@@ -519,7 +511,7 @@ static void on_display(void)
 	draw_wall(0.1,x,z);
 	glPopMatrix(); 
 
-	//zidove sa strane:
+	//Zidovi sa strane:
 
 	glPushMatrix();
 	glRotatef(90,0,1,0);
@@ -541,7 +533,7 @@ static void on_display(void)
 	
 
 
-	//Svetlo
+	//Osvetljenje
 
 
 	GLfloat ambient_coeffs_floor[]={0.3,1,1,0};
@@ -571,7 +563,7 @@ static void on_display(void)
         glMaterialfv(GL_FRONT, GL_DIFFUSE,diffuse_coeffs_ball);
         glMaterialfv(GL_FRONT, GL_SPECULAR,specular_coeffs_ball);
 	
-
+//Crtamo lopticu
        
         draw_ball();
    
@@ -590,6 +582,8 @@ static void draw_ball(){
 
 }
 
+//Funkcija za crtanje zidova lavirinta 
+//Kod za funkciju napisan uz pomoc: https://stackoverflow.com/questions/28547173/creating-a-3d-room-in-opengl-c
 
 static void draw_wall(float t,float x, float z){
 
@@ -628,7 +622,7 @@ static void draw_labyrinth(){
 	draw_wall(0.1,x,z);
 	glPopMatrix(); 
 
-	//pokretni zidovi:
+
 	
 
 	glPushMatrix();
@@ -636,7 +630,7 @@ static void draw_labyrinth(){
 	x=0.5;
 	t=0.03;
 	z=1.4;
-	glTranslatef(-0.2,-1.5,wall1Z);
+	glTranslatef(-0.2,-1.5,0.3);
 	draw_wall(0.1,x,z);
 	glPopMatrix(); 
 	
@@ -647,7 +641,7 @@ static void draw_labyrinth(){
 	x=0.5;
 	t=0.03;
 	z=1.4;
-	glTranslatef(-0.2,-1.3,-wall1Z);
+	glTranslatef(-0.2,-1.3,-0.3);
 	draw_wall(0.1,x,z);
 	glPopMatrix(); 
 
@@ -717,63 +711,48 @@ static void draw_labyrinth(){
 
 }
 
+//Uvecavamo i smanjujemo koordinate loptice
 
 void increment_z(){
-  
-int check=check_function();
- if(check_function()==0){
-      kx=0;
-    kz=1;
+
+	if(check_function()==0){
+	      kx=0;
+	      kz=1;
 	}
-else
-     kz+=0.03;
+	else 
+     	      kz+=0.03;
    
-}
-void dec_z(){
-int check=check_function();
-if(check_function()==0){
-      kx=0;
-    kz=1;
 	}
-else
-    kz-=0.03;
+void dec_z(){
+
+	if(check_function()==0){
+           kx=0;
+           kz=1;
+	}
+	else 
+          kz-=0.03;
    
 }
 void increment_x(){
-int check=check_function();
-if(check_function()==0){
-      kx=0;
-    kz=1;
+
+	if(check_function()==0){
+	      kx=0;
+	      kz=1;
 	}
-else
-      kx+=0.03;
+	else 
+      	      kx+=0.03;
      
 }
 void dec_x(){
-int check=check_function();
-if(check_function()==0){
-      kx=0;
-    kz=1;
+	if(check_function()==0){
+     		 kx=0;
+    		 kz=1;
 	}
-else
-    kx-=0.03;
+	else 
+   		 kx-=0.03;
   
-}
-void increment_y(){
-int check=check_function();
-if(check_function()==0){
-      kx=0;
-      kz=1;
 	}
 
-else
-
-      ky+=0.03;
-     
-}
-void dec_y(){
-    ky-=0.01;
-}
 void right_func(){
     if((angle>=0 && angle<90) || (angle<0 && angle>=-90)){
         increment_z();
