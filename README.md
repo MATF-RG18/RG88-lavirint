@@ -9,4 +9,4 @@ Lopticu pomeramo pomocu tastature:
 'd'-desno
 'a'-levo
 
-Takodje pomeramo i kameru, na tastaturi na strelicama.
+Takodje pomeramo i kameru, na tastaturi pomocu strelica.
